@@ -1,4 +1,4 @@
-import { Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route, Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import RequireAuth from './components/RequireAuth'
 import PublicTimeline from './pages/PublicTimeline'
@@ -6,31 +6,53 @@ import OwnTimeline from './pages/OwnTimeline'
 import Login from './pages/Login'
 import SignUp from './pages/SignUp'
 import CreatePost from './pages/CreatePost'
+import Reels from './pages/Reels'
+import { IconHome, IconPlus, IconReels, IconUser } from './components/Icons'
 
 function Nav() {
   const { session, displayName, signOut } = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
 
   const handleSignOut = async () => {
     await signOut()
     navigate('/')            // FR-09: back to the public timeline
   }
 
+  const link = (to: string, label: string, icon: React.ReactNode) => (
+    <Link to={to} className={`nav-link${pathname === to ? ' active' : ''}`}>
+      <span className="row" style={{ gap: 6 }}>{icon}{label}</span>
+    </Link>
+  )
+
   return (
     <header className="nav">
-      <Link to="/" className="brand">SimpleSocial</Link>
-      <nav>
+      <Link to="/" className="brand">
+        <span className="brand-mark" />
+        <span>SimpleSocial</span>
+      </Link>
+
+      <nav className="nav-links">
+        {link('/', 'Home', <IconHome size={16} />)}
+        {link('/reels', 'Reels', <IconReels size={16} />)}
+
         {session ? (
           <>
-            <Link to="/me">My posts</Link>
-            <Link to="/compose" className="btn btn-primary">Create post</Link>
-            <span className="who">{displayName}</span>
-            <button className="btn btn-ghost" onClick={handleSignOut}>Log out</button>
+            {link('/me', 'You', <IconUser size={16} />)}
+            <Link to="/compose" className="btn btn-primary btn-sm" style={{ marginLeft: 4 }}>
+              <IconPlus size={15} />
+              Post
+            </Link>
+            <button className="avatar" onClick={handleSignOut}
+                    title={`${displayName ?? 'Account'} — click to log out`}
+                    aria-label="Log out" style={{ border: 0, cursor: 'pointer', marginLeft: 4 }}>
+              {(displayName ?? '?').slice(0, 1)}
+            </button>
           </>
         ) : (
           <>
-            <Link to="/login">Log in</Link>
-            <Link to="/signup" className="btn btn-primary">Sign up</Link>
+            <Link to="/login" className="nav-link">Log in</Link>
+            <Link to="/signup" className="btn btn-primary btn-sm">Sign up</Link>
           </>
         )}
       </nav>
@@ -39,6 +61,11 @@ function Nav() {
 }
 
 export default function App() {
+  const { pathname } = useLocation()
+
+  // Reels is a full-bleed, fixed-position view; it replaces the page chrome.
+  if (pathname === '/reels') return <Reels />
+
   return (
     <div className="app">
       <Nav />

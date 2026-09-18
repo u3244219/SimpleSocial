@@ -22,7 +22,11 @@ export interface Page {
  * into a page we already rendered -- that is what prevents duplicates (AC-09).
  * Offset pagination would not give that guarantee.
  */
-async function fetchFeed(ownerId: string | null, cursor: Cursor | null): Promise<Page> {
+async function fetchFeed(
+  ownerId: string | null,
+  cursor: Cursor | null,
+  mediaType?: Post['media_type'],
+): Promise<Page> {
   let query = supabase
     .from('posts_with_author')
     .select('id, owner_id, text, media_type, created_at, author_display_name')
@@ -31,6 +35,7 @@ async function fetchFeed(ownerId: string | null, cursor: Cursor | null): Promise
     .limit(PAGE_SIZE)
 
   if (ownerId) query = query.eq('owner_id', ownerId)   // FR-24
+  if (mediaType) query = query.eq('media_type', mediaType)
 
   if (cursor) {
     query = query.or(
@@ -82,6 +87,13 @@ export const fetchPublicTimeline = (cursor: Cursor | null) => fetchFeed(null, cu
 /** FR-24: own timeline, signed-in user only. */
 export const fetchOwnTimeline = (ownerId: string, cursor: Cursor | null) =>
   fetchFeed(ownerId, cursor)
+
+/**
+ * Reels: video posts only, newest first, same keyset cursor as the timelines.
+ * Beyond the MVP spec -- an alternative presentation of existing video posts,
+ * requiring no schema change.
+ */
+export const fetchVideoPosts = (cursor: Cursor | null) => fetchFeed(null, cursor, 'video')
 
 /**
  * FR-29 / BR-06: soft delete. RLS ("owners soft-delete own posts") rejects this

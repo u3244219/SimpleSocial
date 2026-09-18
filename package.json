@@ -9,9 +9,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist",
-    "check": "node --env-file=.env.local scripts/check-supabase.mjs"
+    "deploy": "git push origin main",
+    "check": "node --env-file=.env.local scripts/check-supabase.mjs",
+    "deploy:manual": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

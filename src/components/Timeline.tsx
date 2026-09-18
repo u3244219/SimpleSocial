@@ -1,22 +1,47 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import PostCard from './PostCard'
 import { deletePost } from '../lib/posts'
 import type { Cursor, Post } from '../lib/types'
 import type { Page } from '../lib/posts'
+import { IconAlert } from './Icons'
+
+function Skeletons() {
+  return (
+    <div className="feed" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="skel-post">
+          <div className="row" style={{ marginBottom: 14 }}>
+            <div className="skeleton" style={{ width: 30, height: 30, borderRadius: '50%' }} />
+            <div>
+              <div className="skeleton skel-line" style={{ width: 110 }} />
+              <div className="skeleton skel-line" style={{ width: 60, marginBottom: 0 }} />
+            </div>
+          </div>
+          <div className="skeleton skel-line" style={{ width: '92%' }} />
+          <div className="skeleton skel-line" style={{ width: '74%' }} />
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function Timeline({
   load,
   ownerId,
-  emptyMessage,
+  emptyTitle,
+  emptyBody,
+  emptyAction,
 }: {
   load: (cursor: Cursor | null) => Promise<Page>
   ownerId?: string | null
-  emptyMessage: string
+  emptyTitle: string
+  emptyBody: string
+  emptyAction?: ReactNode
 }) {
   const [posts, setPosts] = useState<Post[]>([])
   const [cursor, setCursor] = useState<Cursor | null>(null)
   const [hasMore, setHasMore] = useState(true)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const started = useRef(false)
@@ -65,8 +90,17 @@ export default function Timeline({
     }
   }
 
-  if (loading && posts.length === 0) return <p className="state">Loading posts…</p>
-  if (!loading && posts.length === 0 && !error) return <p className="state">{emptyMessage}</p>
+  if (loading && posts.length === 0) return <Skeletons />
+
+  if (!loading && posts.length === 0 && !error) {
+    return (
+      <div className="state">
+        <h2>{emptyTitle}</h2>
+        <p>{emptyBody}</p>
+        {emptyAction && <div style={{ marginTop: 18 }}>{emptyAction}</div>}
+      </div>
+    )
+  }
 
   return (
     <>
@@ -80,15 +114,24 @@ export default function Timeline({
       </div>
 
       {error && (
-        <p className="form-error" role="alert">
-          {error} <button className="btn btn-ghost" onClick={() => loadMore(cursor)}>Retry</button>
-        </p>
+        <div className="form-error row" role="alert" style={{ marginTop: 14 }}>
+          <IconAlert />
+          <span style={{ flex: 1 }}>{error}</span>
+          <button className="btn btn-sm" onClick={() => loadMore(cursor)}>Retry</button>
+        </div>
       )}
 
       {hasMore && !error && (
-        <button className="btn btn-block" disabled={loading} onClick={() => loadMore(cursor)}>
-          {loading ? 'Loading…' : 'Load more'}
+        <button className="btn btn-block" disabled={loading} style={{ marginTop: 16 }}
+                onClick={() => loadMore(cursor)}>
+          {loading ? <><span className="spinner" /> Loading</> : 'Load more'}
         </button>
+      )}
+
+      {!hasMore && posts.length > 0 && (
+        <p className="center muted small" style={{ marginTop: 22 }}>
+          You have reached the end.
+        </p>
       )}
     </>
   )

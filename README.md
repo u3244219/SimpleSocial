@@ -46,18 +46,22 @@ npm run dev
 
 ### 3. Deploy
 
-Same flow as WheelOfFortune, adapted to Vite (output is `dist`, not `build`):
+GitHub Pages is configured to build from **GitHub Actions** (Settings > Pages >
+Source). A push to `main` builds and publishes automatically:
 
 ```bash
-npm run deploy        # builds, then pushes dist/ to the gh-pages branch
+npm run deploy        # == git push origin main
 ```
 
-Then in the repo: Settings → Pages → Source = "Deploy from a branch" → `gh-pages` / root.
+The Supabase URL and anon key are injected at build time from repository
+**Variables** (Settings > Secrets and variables > Actions > Variables), not
+Secrets -- they are public values that ship in the bundle either way.
 
-Alternatively `.github/workflows/deploy.yml` deploys automatically on push to
-`main`. To use it, set Settings → Pages → Source = "GitHub Actions" and add
-`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` under Settings → Secrets and
-variables → Actions → **Variables** (not Secrets — they are public values).
+`npm run deploy:manual` is a fallback that pushes `dist/` to a `gh-pages`
+branch with the `gh-pages` package. It only works if Pages is switched back to
+"Deploy from a branch", and it needs git credentials for the repo owner -- if
+you have several GitHub accounts in your credential store it may push as the
+wrong one.
 
 ## Notes and known deviations
 
@@ -73,7 +77,14 @@ variables → Actions → **Variables** (not Secrets — they are public values)
 - **Retention:** deletion is soft (`posts.deleted_at`). Permanent purge of rows
   and storage objects still needs a scheduled cleanup job.
 
+## Beyond the spec
+
+- **Reels** (`/reels`): a full-screen vertical video feed with scroll snapping
+  and autoplay-on-view, over the same video posts the timeline shows. No schema
+  change -- it filters `media_type = 'video'` through the existing keyset
+  cursor. Not part of the functional specification; added by request.
+
 ## Spec coverage
 
-Implemented: FR-01 → FR-12, FR-14 → FR-29, BR-01 → BR-10.
+Implemented: FR-01 to FR-12, FR-14 to FR-29, BR-01 to BR-10.
 Partial: FR-13 (50 MB not 100 MB video cap).

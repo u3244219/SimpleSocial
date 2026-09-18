@@ -7,6 +7,7 @@ import {
   probe, validateSelection, uploadAll, discardUploads,
   type Selected, type UploadedMedia,
 } from '../lib/upload'
+import { IconAlert, IconImage } from '../components/Icons'
 
 export default function CreatePost() {
   const navigate = useNavigate()
@@ -95,54 +96,89 @@ export default function CreatePost() {
   }
 
   const remaining = MAX_TEXT_LENGTH - text.length
+  const pct = progress ? Math.round((progress.done / progress.total) * 100) : 0
 
   return (
-    <div className="card form-card">
-      <h1>Create post</h1>
-      <form onSubmit={onSubmit}>
-        <label htmlFor="text">What's on your mind?</label>
-        <textarea id="text" rows={5} value={text} maxLength={MAX_TEXT_LENGTH}
-                  onChange={(e) => setText(e.target.value)} />
-        <p className="muted small">{remaining} characters remaining</p>
+    <section>
+      <div className="page-head">
+        <h1>New post</h1>
+        <p className="page-sub">Share text, up to {MAX_IMAGES} images, or one video.</p>
+      </div>
 
-        <label htmlFor="media">
-          Attach up to {MAX_IMAGES} images, or one video
-        </label>
-        <input id="media" type="file" ref={fileInput} multiple
-               accept={[...IMAGE_MIME, ...VIDEO_MIME].join(',')}
-               onChange={onPick} disabled={busy} />
+      <form onSubmit={onSubmit} className="card composer">
+        <label htmlFor="text" className="sr-only" style={{ display: 'none' }}>Post text</label>
+        <textarea id="text" rows={4} value={text} maxLength={MAX_TEXT_LENGTH}
+                  placeholder="What would you like to share?"
+                  onChange={(e) => setText(e.target.value)} disabled={busy} autoFocus />
+
+        {items.length === 0 && (
+          <label className="dropzone">
+            <input type="file" ref={fileInput} multiple
+                   accept={[...IMAGE_MIME, ...VIDEO_MIME].join(',')}
+                   onChange={onPick} disabled={busy} />
+            <IconImage />
+            <strong>Add photos or a video</strong>
+            <span>JPG, PNG, WebP up to 10 MB · MP4 or WebM up to 50 MB</span>
+          </label>
+        )}
 
         {items.length > 0 && (
-          <div className="preview-grid">
-            {items.map((item, i) => (
-              <div key={item.previewUrl} className="preview">
-                {item.kind === 'image'
-                  ? <img src={item.previewUrl} alt="" />
-                  : <video src={item.previewUrl} muted />}
-                <button type="button" className="preview-remove" disabled={busy}
-                        aria-label={`Remove ${item.file.name}`}
-                        onClick={() => removeAt(i)}>×</button>
-              </div>
-            ))}
-          </div>
+          <>
+            <div className="preview-grid">
+              {items.map((item, i) => (
+                <div key={item.previewUrl} className="preview">
+                  {item.kind === 'image'
+                    ? <img src={item.previewUrl} alt="" />
+                    : <video src={item.previewUrl} muted />}
+                  <button type="button" className="preview-remove" disabled={busy}
+                          aria-label={`Remove ${item.file.name}`}
+                          onClick={() => removeAt(i)}>×</button>
+                </div>
+              ))}
+            </div>
+            {items[0].kind === 'image' && items.length < MAX_IMAGES && !busy && (
+              <label className="dropzone" style={{ padding: 12, marginTop: 8 }}>
+                <input type="file" ref={fileInput} multiple
+                       accept={IMAGE_MIME.join(',')} onChange={onPick} />
+                <span>Add more images ({MAX_IMAGES - items.length} left)</span>
+              </label>
+            )}
+          </>
         )}
 
         {progress && (
-          <p className="muted small" role="status">
-            Uploading {progress.done} of {progress.total}…
-          </p>
+          <>
+            <div className="progress-track">
+              <div className="progress-bar" style={{ width: `${pct}%` }} />
+            </div>
+            <p className="muted small" role="status" style={{ marginTop: 7 }}>
+              Uploading {progress.done} of {progress.total}…
+            </p>
+          </>
         )}
 
-        {error && <p className="form-error" role="alert">{error}</p>}
+        {error && (
+          <div className="form-error row" role="alert">
+            <IconAlert />
+            <span>{error}</span>
+          </div>
+        )}
 
-        <div className="row">
-          <button className="btn btn-primary" disabled={busy}>
-            {busy ? 'Publishing…' : 'Publish'}
-          </button>
-          <button type="button" className="btn btn-ghost" disabled={busy}
-                  onClick={() => navigate(-1)}>Cancel</button>
+        <hr className="divider" />
+
+        <div className="row spread">
+          <span className={`muted small char-count${remaining < 100 ? ' warn' : ''}`}>
+            {remaining.toLocaleString()} left
+          </span>
+          <span className="row">
+            <button type="button" className="btn btn-ghost" disabled={busy}
+                    onClick={() => navigate(-1)}>Cancel</button>
+            <button className="btn btn-primary" disabled={busy}>
+              {busy ? <><span className="spinner" /> Publishing</> : 'Publish'}
+            </button>
+          </span>
         </div>
       </form>
-    </div>
+    </section>
   )
 }

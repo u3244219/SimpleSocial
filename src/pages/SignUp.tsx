@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { IconAlert } from '../components/Icons'
 
 export default function SignUp() {
   const navigate = useNavigate()
@@ -56,41 +57,47 @@ export default function SignUp() {
     else setFormError('Account created. Please log in.')
   }
 
+  const field = (
+    id: string, label: string, type: string, value: string,
+    set: (v: string) => void, autoComplete: string, placeholder?: string,
+  ) => (
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
+      <input id={id} type={type} value={value} autoComplete={autoComplete}
+             placeholder={placeholder}
+             onChange={(e) => set(e.target.value)}
+             aria-invalid={!!errors[id]} />
+      {errors[id] && <p className="field-error">{errors[id]}</p>}
+    </div>
+  )
+
   return (
     <div className="card form-card">
       <h1>Create your account</h1>
+      <p className="page-sub">You can start posting straight away.</p>
+
       <form onSubmit={onSubmit} noValidate>
-        <label htmlFor="displayName">Display name</label>
-        <input id="displayName" value={displayName} autoComplete="nickname"
-               onChange={(e) => setDisplayName(e.target.value)}
-               aria-invalid={!!errors.displayName} />
-        {errors.displayName && <p className="field-error">{errors.displayName}</p>}
+        {field('displayName', 'Display name', 'text', displayName, setDisplayName, 'nickname', 'Ada Lovelace')}
+        {field('email', 'Email', 'email', email, setEmail, 'email', 'you@example.com')}
+        {field('password', 'Password', 'password', password, setPassword, 'new-password', 'At least 8 characters')}
+        {field('confirm', 'Confirm password', 'password', confirm, setConfirm, 'new-password', '••••••••')}
 
-        <label htmlFor="email">Email</label>
-        <input id="email" type="email" value={email} autoComplete="email"
-               onChange={(e) => setEmail(e.target.value)}
-               aria-invalid={!!errors.email} />
-        {errors.email && <p className="field-error">{errors.email}</p>}
+        {formError && (
+          <div className="form-error row" role="alert">
+            <IconAlert />
+            <span>{formError}</span>
+          </div>
+        )}
 
-        <label htmlFor="password">Password</label>
-        <input id="password" type="password" value={password} autoComplete="new-password"
-               onChange={(e) => setPassword(e.target.value)}
-               aria-invalid={!!errors.password} />
-        {errors.password && <p className="field-error">{errors.password}</p>}
-
-        <label htmlFor="confirm">Confirm password</label>
-        <input id="confirm" type="password" value={confirm} autoComplete="new-password"
-               onChange={(e) => setConfirm(e.target.value)}
-               aria-invalid={!!errors.confirm} />
-        {errors.confirm && <p className="field-error">{errors.confirm}</p>}
-
-        {formError && <p className="form-error" role="alert">{formError}</p>}
-
-        <button className="btn btn-primary btn-block" disabled={busy}>
-          {busy ? 'Creating account…' : 'Sign up'}
+        <button className="btn btn-primary btn-block" disabled={busy} style={{ marginTop: 18 }}>
+          {busy ? <><span className="spinner" /> Creating account</> : 'Sign up'}
         </button>
       </form>
-      <p className="muted">Already have an account? <Link to="/login">Log in</Link></p>
+
+      <hr className="divider" />
+      <p className="center muted small" style={{ margin: 0 }}>
+        Already have an account? <Link to="/login">Log in</Link>
+      </p>
     </div>
   )
 }
