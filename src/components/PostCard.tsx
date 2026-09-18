@@ -41,13 +41,15 @@ export default function PostCard({
   const images = post.media_type === 'image' ? post.media : []
   const shown = images.slice(0, VISIBLE_THUMBS)
   const overflow = images.length - shown.length
+  const first = images[0]
+  const ratio = first?.width && first?.height ? first.width / first.height : 1
 
   return (
     <article className="post">
       <header className="post-head">
-        <span className="avatar">{post.author_display_name.slice(0, 1)}</span>
-        <div>
-          <div className="post-author">{post.author_display_name}</div>
+        <span className="avatar avatar-sm">{post.author_display_name.slice(0, 1)}</span>
+        <div className="post-ident">
+          <span className="post-author">{post.author_display_name}</span>
           <time dateTime={post.created_at} className="post-time">
             {timeLabel(post.created_at)}
           </time>
@@ -68,7 +70,10 @@ export default function PostCard({
       {post.text && <p className="post-text">{post.text}</p>}
 
       {images.length > 0 && (
-        <div className={`media-grid count-${Math.min(images.length, 4)}`}>
+        // Every image in a post shares one crop shape, so the first one's
+        // dimensions define the frame the feed reserves for it.
+        <div className={`media-grid count-${Math.min(images.length, 4)}`}
+             style={{ '--post-ratio': ratio } as React.CSSProperties}>
           {shown.map((m, i) => (
             <button key={m.id} className="thumb" onClick={() => setLightbox(i)}
                     aria-label={`Open image ${i + 1} of ${images.length}`}>
@@ -83,8 +88,10 @@ export default function PostCard({
 
       {post.media_type === 'video' && post.media[0] && (
         <div className="video-wrap">
-          {/* FR-21: native controls give play, pause, seek, volume, fullscreen. */}
-          <video className="post-video" controls preload="metadata"
+          {/* FR-21: native controls give play, pause, seek, volume, fullscreen.
+              playsInline keeps iOS Safari from hijacking playback into its own
+              fullscreen player the moment you press play. */}
+          <video className="post-video" controls playsInline preload="metadata"
                  src={mediaUrl(post.media[0].storage_key)} />
           <Link to="/reels" className="reel-link">
             <IconReels size={13} /> Reels

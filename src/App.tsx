@@ -19,9 +19,12 @@ function Nav() {
     navigate('/')            // FR-09: back to the public timeline
   }
 
+  // The label sits in its own span so narrow screens can drop the text and
+  // keep the icon, rather than collapsing the whole link.
   const link = (to: string, label: string, icon: React.ReactNode) => (
-    <Link to={to} className={`nav-link${pathname === to ? ' active' : ''}`}>
-      <span className="row" style={{ gap: 6 }}>{icon}{label}</span>
+    <Link to={to} className={`nav-link${pathname === to ? ' active' : ''}`} title={label}>
+      {icon}
+      <span className="nav-label">{label}</span>
     </Link>
   )
 
@@ -41,7 +44,7 @@ function Nav() {
             {link('/me', 'You', <IconUser size={16} />)}
             <Link to="/compose" className="btn btn-primary btn-sm" style={{ marginLeft: 4 }}>
               <IconPlus size={15} />
-              Post
+              <span className="nav-label">Post</span>
             </Link>
             <button className="avatar" onClick={handleSignOut}
                     title={`${displayName ?? 'Account'} — click to log out`}
