@@ -91,12 +91,30 @@ for (const table of ['profiles', 'posts', 'media', 'posts_with_author']) {
                      : (body?.message ?? '').slice(0, 60))
 }
 
-// 6. Storage bucket from migration 0002
+// 6. Storage bucket from migration 0002.
+//    NOT via GET /bucket/<id> -- storage.buckets has its own RLS that hides
+//    bucket metadata from the anon role, so that endpoint reports "Bucket not
+//    found" even when the bucket exists. Instead we attempt an upload and read
+//    the error: a disallowed MIME type or an RLS rejection both prove the
+//    bucket is there, while a genuinely missing bucket says NoSuchBucket.
 {
-  const { res, body } = await call('/storage/v1/bucket/post-media')
-  record('Storage bucket "post-media"', res.ok,
-    res.ok ? `public=${body.public}, limit=${Math.round((body.file_size_limit ?? 0) / 1048576)}MB`
-           : (body?.message ?? `HTTP ${res.status} -- run 0002_storage.sql`))
+  const res = await fetch(`${url}/storage/v1/object/post-media/.probe.txt`, {
+    method: 'POST',
+    headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'text/plain' },
+    body: 'probe',
+  })
+  const body = await res.json().catch(() => ({}))
+  const code = body?.code ?? ''
+
+  if (res.ok) {
+    record('Storage bucket "post-media"', false, 'ANONYMOUS UPLOAD SUCCEEDED -- check storage RLS')
+  } else if (code === 'NoSuchBucket') {
+    record('Storage bucket "post-media"', false, 'bucket missing -- run 0002_storage.sql')
+  } else if (code === 'InvalidMimeType') {
+    record('Storage bucket "post-media"', true, 'exists, MIME allowlist enforced')
+  } else {
+    record('Storage bucket "post-media"', true, `exists, upload blocked (${code || res.status})`)
+  }
 }
 
 // ---------------------------------------------------------------------------
